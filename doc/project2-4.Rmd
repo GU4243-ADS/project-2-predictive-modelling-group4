@@ -27,7 +27,7 @@ library("tidyverse")
 ```
 ##set the working derectory
 ```{r}
-setwd("/Users/xiangyu/Documents/GitHub/project-2-predictive-modelling-group4/doc") 
+#setwd("/Users/xiangyu/Documents/GitHub/project-2-predictive-modelling-group4/doc") 
 # Replace the above with your own path or manually set it in RStudio to where the main.rmd file is located. 
 ```
 ##set the directory for the training set and test set
@@ -40,7 +40,7 @@ img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ```{r}
 labels = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names = c('label'))
 
-labels
+head(labels,10)
 ```
 
 ```{r}
@@ -49,7 +49,7 @@ n_files
 ```
 There are 2000 images in the training set. Then we will read in all the images and store their dimensions in the `dat` matrix.
 ```{r}
-n_files <- 500
+n_files <- 2000
 dat <- matrix(NA, nrow = n_files, ncol = 3) 
 imgs <- vector("list", n_files)
 
@@ -58,7 +58,7 @@ for(i in 1:n_files){
   imgs[[i]] <- img
   dat[i, 1:length(dim(img))] <- dim(img)
 }
-dat
+head(dat)
 ```
 
 ## get the general information of the images
@@ -75,7 +75,7 @@ dim(img_resized[[1]])
 ```
 ##construct visual features
 ```{r}
-feature <- function(img_dir, data_name="data", export=T){
+feature <- function(img_dir, data_name, export=T){
   
   ### Construct process features for training/testing images
   ### Sample simple feature: Extract row average raw pixel values as features
@@ -94,22 +94,22 @@ feature <- function(img_dir, data_name="data", export=T){
   n_r  <- nrow(img0)
   
   ### store vectorized pixel values of images
-  dat <- matrix(NA, n_files, n_r) 
+  dat <- data.frame(matrix(nrow = 2000, ncol = 1280))
   for(i in 1:n_files){
     img     <- readImage(paste0(img_dir, data_name, i, ".jpg"))
-    dat[i,] <- rowMeans(img)
+    mean    <- rowMeans(img)
+    for( j in 1:(length(mean))){
+      dat[i,j] <- mean[j]
+    }
   }
-  
-?rowMeans()
+
   
   ### output constructed features
   if(export){
     save(dat, file = paste0("../output/feature_", data_name, ".RData"))
   }
-  return(dat2)
+  return(dat)
 }
-
-
 ```
 
 There is still some problem in this function - need to be revised.
@@ -124,7 +124,8 @@ tm_feature_train <- NA
 if(run.feature.train){
   tm_feature_train <- system.time(dat_train <- feature(img_train_dir, data_name = "pet", export = TRUE))
 }
-
+tm_feature_train
+dat_train
 tm_feature_test <- NA
 if(run.feature.test){
   tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
