@@ -27,7 +27,7 @@ library("tidyverse")
 ```
 ##set the working derectory
 ```{r}
-#setwd("/Users/xiangyu/Documents/GitHub/project-2-predictive-modelling-group4/doc") 
+setwd("../doc") 
 # Replace the above with your own path or manually set it in RStudio to where the main.rmd file is located. 
 ```
 ##set the directory for the training set and test set
@@ -42,14 +42,14 @@ labels = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names 
 
 head(labels,10)
 ```
+# There are 2000 images in the training set. Then we will read in all the images and store their dimensions in the `dat` matrix.
 
 ```{r}
 n_files <- length(list.files(img_train_dir))
 n_files
 ```
-There are 2000 images in the training set. Then we will read in all the images and store their dimensions in the `dat` matrix.
+
 ```{r}
-n_files <- 2000
 dat <- matrix(NA, nrow = n_files, ncol = 3) 
 imgs <- vector("list", n_files)
 
