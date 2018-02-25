@@ -7,7 +7,7 @@ output:
   html_document: default
 ---
 ## STEP0: Prepare and load the library
-```{r}
+```{r prepare}
 if(!require("EBImage")){
   source("https://bioconductor.org/biocLite.R")
   biocLite("EBImage")
@@ -21,35 +21,26 @@ if(!require("pbapply")){
   install.packages("pbapply")
 }
 
-library("EBImage")
-library("gbm")
-library("tidyverse")
-```
-##set the working derectory
-```{r}
-setwd("../doc") 
-# Replace the above with your own path or manually set it in RStudio to where the main.rmd file is located. 
-```
-##set the directory for the training set and test set
-```{r}
-img_train_dir  <- "../data/pets/train/"  ##This is where I put the traing data
+library("EBImage");library("gbm");library("tidyverse")
 
-img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ```
-##read the labels of traing data
+
+## set the directory for the training set and test set
+## read the labels of traing data
 ```{r}
-labels = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names = c('label'))
+img_train_dir  <- "../data/pets/train/"  ## the traing data
+
+img_test_dir   <- "../data/pets/test/"  ## the test data
+
+labels = read_csv("../data/pets/train_label.txt", col_names = c('label'))
 
 head(labels,10)
 ```
 # There are 2000 images in the training set. Then we will read in all the images and store their dimensions in the `dat` matrix.
 
-```{r}
+```{r input image}
 n_files <- length(list.files(img_train_dir))
-n_files
-```
 
-```{r}
 dat <- matrix(NA, nrow = n_files, ncol = 3) 
 imgs <- vector("list", n_files)
 
@@ -57,6 +48,7 @@ for(i in 1:n_files){
   img <- readImage(paste0(img_train_dir,  "pet", i, ".jpg"))
   imgs[[i]] <- img
   dat[i, 1:length(dim(img))] <- dim(img)
+  print(i)
 }
 head(dat)
 ```
