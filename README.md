@@ -16,10 +16,10 @@ Term: Spring 2018
 + Project summary: [a short summary] 
 
 
-NEXT STEPS
-Neural Network package in R for image recognition
-Logistic Regression
-Search internet for other image recognition libraries in R
+NEXT STEPS\n
+Neural Network package in R for image recognition\n
+Logistic Regression\n
+Search internet for other image recognition libraries in R\n
 
 
 
