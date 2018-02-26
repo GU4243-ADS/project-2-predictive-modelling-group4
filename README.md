@@ -10,9 +10,9 @@
 
 Term: Spring 2018
 
-+ Project title: [a title]
-+ Team Number: [a number]
-+ Team Members: [a list of team members]
++ Project title: Dogs Rule
++ Team Number: 4
++ Team Members: Richard, Xiangyu, Cindy, Shan, Minzi
 + Project summary: [a short summary] 
 
 
