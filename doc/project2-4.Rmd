@@ -72,10 +72,13 @@ table(dat[, 1])
 ```{r}
 img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
 dim(img_resized[[1]])
+img_resized
+dim(img_resized)
+length(rowMeans(img_resized[224,,]))
 ```
 ##construct visual features
 ```{r}
-feature <- function(img_dir, data_name, export=T){
+feature1 <- function(img_list, data_name, export=T){
   
   ### Construct process features for training/testing images
   ### Sample simple feature: Extract row average raw pixel values as features
@@ -86,33 +89,50 @@ feature <- function(img_dir, data_name, export=T){
   ### load libraries
   library("EBImage")
   
-  n_files <- length(list.files(img_dir))
   
   ### determine img dimensions
-  img0 <-  readImage(paste0(img_dir, data_name, 1, ".jpg"))
-  mat1 <- as.matrix(img0)
-  n_r  <- nrow(img0)
+#  img0 <-  readImage(paste0(img_dir, data_name, 1, ".jpg"))
+#  mat1 <- as.matrix(img0)
+#  n_r  <- nrow(img0)
   
   ### store vectorized pixel values of images
-  dat <- data.frame(matrix(nrow = 2000, ncol = 1280))
-  for(i in 1:n_files){
-    img     <- readImage(paste0(img_dir, data_name, i, ".jpg"))
-    mean    <- rowMeans(img)
-    for( j in 1:(length(mean))){
-      dat[i,j] <- mean[j]
-    }
+#  dat <- data.frame(matrix(nrow = 2000, ncol = 1280))
+  dat <-data.frame()
+  
+  for(i in 1:nrow(img_list)){
+#    img     <- readImage(paste0(img_dir, data_name, i, ".jpg"))
+    mean    <- rowMeans(img_list[i,,])
+  
+    
+    img_rotate <- translate(rotate(img_list[i,,], 45), c(50, 0)) #rotate 45 degrees clockwise
+    mean_rotate1 <- rowMeans(img_rotate)
+    img_rotate <- translate(rotate(img_list[i,,],-45), c(50, 0)) #rotate 45 degrees ccw
+    mean_rotate2 <- rowMeans(img_rotate)
+    img_flip   <- flip(img_list[i,,])
+    mean_flip <- rowMeans(img_rotate)
+    img_flop    <- flop(img_list[i,,])
+    mean_flop <- rowMeans(img_rotate)
+    img_flipflop <- flop(flip(img_list[i,,]))
+    mean_flipflop <- rowMeans(img_rotate)
+    dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
+  # spatial transformations
+  ##  img_rotate <- translate(rotate(img, 45), c(50, 0)) #rotate 45 degrees clockwise
+  ##  img_rotate <- translate(rotate(img,-45), c(50, 0)) #rotate 45 degrees ccw
+  ##  img_flip   <- flip(img)
+  ##  img_flop    <- flop(img)
+  ##  img_flipflop <- flop(flip(img))
 
   
+  
+  
+  
   ### output constructed features
-  if(export){
-    save(dat, file = paste0("../output/feature_", data_name, ".RData"))
-  }
+
   return(dat)
 }
 ```
 
-There is still some problem in this function - need to be revised.
 ```{r}
 source("../lib/feature.R")
 run.feature.train <- TRUE # process features for training set
@@ -122,15 +142,16 @@ run.feature.test  <- TRUE # process features for test set
 tm_feature_train <- NA
 
 if(run.feature.train){
-  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, data_name = "pet", export = TRUE))
+  tm_feature_train <- system.time(dat_train <- feature1(img_resized, data_name = "pet", export = TRUE))
 }
+
 tm_feature_train
 dat_train
 tm_feature_test <- NA
-if(run.feature.test){
-  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
-                                                     data_name = "pets", export = TRUE))
-}
+#if(run.feature.test){
+#  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
+#                                                     data_name = "pets", export = TRUE))
+#}
 
 ```
 
