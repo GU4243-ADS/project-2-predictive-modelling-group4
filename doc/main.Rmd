@@ -29,13 +29,13 @@ library("gbm")
 We first set the working directory to the location of this .Rmd file  (it should be in a project folder). Then we specify our training and testing data. If you do not have an independent test set, you need to create your own testing data by random subsampling from the training data (we haven't done this here), and in order to obain reproducible results, you should use `set.seed()` whenever randomization is used. 
 
 ```{r wkdir, eval=FALSE}
-setwd("Spring2018/Project_Starter_Codes/Project2-PredictiveModelling/doc") 
+setwd("/Users/pinkysilva/Documents/GitHub/project-2-predictive-modelling-group4/doc")
 # Replace the above with your own path or manually set it in RStudio to where this rmd file is located. 
 ```
 
-Now we provide directories for teh raw images. Here we assume the training set and test set are in different subfolders. 
+Now we provide directories for the raw images. Here we assume the training set and test set are in different subfolders. 
 ```{r}
-experiment_dir <- "../data/zipcode/" # This will be modified for different data sets.
+experiment_dir <- "../data/pets/" # This will be modified for different data sets.
 img_train_dir  <- paste(experiment_dir, "train/", sep="")
 img_test_dir   <- paste(experiment_dir, "test/", sep="")
 ```
@@ -67,11 +67,11 @@ model_labels <- paste("GBM with depth =", model_values)
 
 ### Step 2: Import training images class labels.
 
-For the example of zip code digits, we code digit 9 as "1" and digit 7 as "0" for binary classification.
+For the example of zip code digits, we code "dog" as "1" and "cat"" as "0" for binary classification.
 
 ```{r train_label}
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
-label_train <- as.numeric(unlist(label_train) == "9")
+label_train <- as.numeric(unlist(label_train) == "dog")
 ```
 
 ### Step 3: Construct visual features
