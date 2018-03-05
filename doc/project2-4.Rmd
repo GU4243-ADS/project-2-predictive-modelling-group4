@@ -112,6 +112,8 @@ feature1 <- function(img_list, data_name, export=T){
     mean_flipflop <- rowMeans(img_rotate)
     dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
+  colnames(dat) <- c(1:181)
+
   ### output constructed features
   if(export){
     save(dat, file = paste0("../output/feature_", data_name, ".Rdata"))
@@ -133,10 +135,13 @@ if(run.feature.train){
 }
 
 tm_feature_train
-#add labels as the final column in the 
+
+#add labels as the final column in the dataframe
 dat_train <- cbind(dat_train, expanded_labels)
+dat_test <- dat_train[10000:12000,]
+dat_train <- dat_train[-c(10000:12000),]
 
-
+dat_train
 tm_feature_test <- NA
 #if(run.feature.test){
 #  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
