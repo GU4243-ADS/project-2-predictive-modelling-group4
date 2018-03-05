@@ -1,7 +1,7 @@
 ---
 title: "Project 3 - Example Main Script"
-author: "Yuting Ma, Tian Zheng with updates by Cindy Rush"
-date: "February 2, 2018"
+author: "Richard, Xiangyu, Cindy, Shan, Minzi"
+date: "March 2, 2018"
 output:
   pdf_document: default
   html_document: default
