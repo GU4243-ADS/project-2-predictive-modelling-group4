@@ -113,7 +113,9 @@ feature1 <- function(img_list, data_name, export=T){
     dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
   ### output constructed features
-  
+  if(export){
+    save(dat, file = paste0("../output/feature_", data_name, ".Rdata"))
+  }
   return(dat)
 }
 ```
@@ -127,7 +129,7 @@ run.feature.test  <- TRUE # process features for test set
 tm_feature_train <- NA
 
 if(run.feature.train){
-  tm_feature_train <- system.time(dat_train <- feature1(img_resized, data_name = "pet", export = TRUE))
+  tm_feature_train <- system.time(dat_train <- feature1(img_resized, data_name = "train", export = TRUE))
 }
 
 tm_feature_train
