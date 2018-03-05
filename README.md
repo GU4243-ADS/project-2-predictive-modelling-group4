@@ -11,7 +11,7 @@
 Term: Spring 2018
 
 + Project title: Dogs Rule
-+ Team Number: 4
++ Team Number: 5
 + Team Members: Richard, Xiangyu, Cindy, Shan, Minzi
 + Project summary: Given a training dataset of 1000 dog and 1000 cat pictures, our group was able to extract features from these training images. We then created a model which uses deep learning for image classification.
 
