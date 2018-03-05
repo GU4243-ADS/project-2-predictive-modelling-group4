@@ -10,7 +10,8 @@ In your final Project 2 repo, there should be an R markdown file called `main.Rm
 
 This file is meant to be a template for evaluating models used for image analysis (and could be generalized for any predictive modeling). You should update it according to your models/codes but your final document should have precisely the same structure. 
 
-```{r, warning = FALSE}
+## STEP0: Prepare and load the library
+```{r}
 if(!require("EBImage")){
   source("https://bioconductor.org/biocLite.R")
   biocLite("EBImage")
@@ -20,24 +21,33 @@ if(!require("gbm")){
   install.packages("gbm")
 }
 
+if(!require("drat")){
+  install.packages("drat", repos="https://cran.rstudio.com")
+  drat:::addRepo("dmlc")
+}
+
+if(!require("mxnet")){
+  cran <- getOption("repos")
+  cran["dmlc"] <- "https://s3-us-west-2.amazonaws.com/apache-mxnet/R/CRAN/"
+  options(repos = cran)
+  install.packages("mxnet",dependencies = T)
+}
+
+if(!require("pbapply")){
+  install.packages("pbapply")
+}
+if(!require("rlang")){
+  install.packages("rlang")
+}
 library("EBImage")
 library("gbm")
-```
-
-### Step 0: Specify directories.
-
-We first set the working directory to the location of this .Rmd file  (it should be in a project folder). Then we specify our training and testing data. If you do not have an independent test set, you need to create your own testing data by random subsampling from the training data (we haven't done this here), and in order to obain reproducible results, you should use `set.seed()` whenever randomization is used. 
-
-```{r wkdir, eval=FALSE}
-setwd("/Users/pinkysilva/Documents/GitHub/project-2-predictive-modelling-group4/doc")
-# Replace the above with your own path or manually set it in RStudio to where this rmd file is located. 
+library("tidyverse")
 ```
 
 Now we provide directories for the raw images. Here we assume the training set and test set are in different subfolders. 
 ```{r}
-experiment_dir <- "../data/pets/" # This will be modified for different data sets.
-img_train_dir  <- paste(experiment_dir, "train/", sep="")
-img_test_dir   <- paste(experiment_dir, "test/", sep="")
+img_train_dir  <- "../data/pets/train/"  ##This is where I put the training data
+img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ```
 
 ### Step 1: Set up controls for model evaluation.
@@ -69,9 +79,14 @@ model_labels <- paste("GBM with depth =", model_values)
 
 For the example of zip code digits, we code "dog" as "1" and "cat"" as "0" for binary classification.
 
-```{r train_label}
-label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
-label_train <- as.numeric(unlist(label_train) == "dog")
+```{r}
+label_train = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names = c('label'))
+#we are making 6 times as many features from the images by transforming them
+expanded_label_train <- list()
+for (i in 1:nrow(label_train))
+  for(j in 1:6)
+    expanded_label_train <- rbind(expanded_label_train, label_train[i,])
+
 ```
 
 ### Step 3: Construct visual features
@@ -81,22 +96,96 @@ For this simple example, we use the row averages of raw pixel values as the visu
 `feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
 ```{r feature}
+
+n_files <- length(list.files(img_train_dir))
+n_files
+dat <- matrix(NA, nrow = n_files, ncol = 3) 
+imgs <- vector("list", n_files)
+
+for(i in 1:n_files){
+  img <- readImage(paste0(img_train_dir, "pet", i, ".jpg"))
+  imgs[[i]] <- img
+  dat[i, 1:length(dim(img))] <- dim(img)
+}
+```
+##resize the image and define the feature function
+```{r}
+img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
+img_resized = pblapply(img_resized, function(img){channel(img, "gray")})
+
+dim(img_resized[[1]])
+length(img_resized)
+
 source("../lib/feature.R")
+feature1 <- function(img_list, data_name, export=T){
+  
+  ### Construct process features for training/testing images
+  ### Sample simple feature: Extract row average raw pixel values as features
+  
+  ### Input: List of scaled images
+  ### Output: an .RData file contains processed features for the images
+  
+  ### load libraries
+  library("EBImage")
+  
+  dat <-data.frame()
+  
+  for(i in 1:length(img_list)){
+
+    mean    <- rowMeans(img_list[[i]])
+  
+    
+    img_rotate <- translate(rotate(img_list[[i]], 45), c(50, 0)) #rotate 45 degrees clockwise
+    mean_rotate1 <- rowMeans(img_rotate)
+    img_rotate <- translate(rotate(img_list[[i]],-45), c(50, 0)) #rotate 45 degrees ccw
+    mean_rotate2 <- rowMeans(img_rotate)
+    img_flip   <- flip(img_list[[i]])
+    mean_flip <- rowMeans(img_rotate)
+    img_flop    <- flop(img_list[[i]])
+    mean_flop <- rowMeans(img_rotate)
+    img_flipflop <- flop(flip(img_list[[i]]))
+    mean_flipflop <- rowMeans(img_rotate)
+    dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
+  }
+  colnames(dat) <- c(1:181)
+
+  ### output constructed features
+  if(export){
+    save(dat, file = paste0("../output/feature_", data_name, ".Rdata"))
+  }
+  return(dat)
+}
+```
+
+
+```{r}
+
+run.feature.train <- TRUE # process features for training set
+
+run.feature.test  <- TRUE # process features for test set
 
 tm_feature_train <- NA
+
 if(run.feature.train){
-  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, "train", 
-                                                       data_name = "zip", export = TRUE))
+  tm_feature_train <- system.time(dat_train <- feature1(img_resized, data_name = "train", export = TRUE))
 }
+
+tm_feature_train
+
+#add labels as the final column in the dataframe
+#split the training in to test and train for now
+dat_train <- cbind(dat_train, expanded_labels)
+dat_test <- dat_train[10000:12000,]
+dat_train <- dat_train[-c(10000:12000),]
 
 tm_feature_test <- NA
-if(run.feature.test){
-  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
-                                                     data_name = "zip", export = TRUE))
-}
+# if(run.feature.test){
+#   tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
+#                                                      data_name = "zip", export = TRUE))
+# }
 
-#save(dat_train, file = "../output/feature_train.RData")
-#save(dat_test, file = "../output/feature_test.RData")
+save(dat_train, file = "../output/feature_train.RData")
+save(dat_test, file = "../output/feature_test.RData")
 ```
 
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
