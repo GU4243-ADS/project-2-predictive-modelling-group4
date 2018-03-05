@@ -1,0 +1,82 @@
+---
+title: "test"
+author: "Minzi Keem"
+date: "3/5/2018"
+output: html_document
+---
+
+## Step 0: Prepare packages and install libraries
+```{r}
+# list.of.packages <- c("gbm","caret","randomForest","EBImage","xgboost","OpenImageR", "dplyr")
+# new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+# if(length(new.packages))
+# {
+#   install.packages(new.packages)
+#   source("https://bioconductor.org/biocLite.R")
+#   biocLite("EBImage")
+# }
+# install.packages("rlang", type = "source")
+library("gbm")
+library("ggplot2")
+library("caret")
+library("randomForest")
+library("EBImage")
+library("xgboost")
+library("OpenImageR")
+library("dplyr")
+```
+
+Set the working directory.
+```{r wkdir, eval=FALSE}
+setwd("/Users/pinkysilva/Documents/GitHub/project-2-predictive-modelling-group4/doc")
+# Replace the above with your own path or manually set it in RStudio to where this rmd file is located. 
+```
+
+
+Constructing new visual features
+```{r}
+source("../lib/feature.R")
+set.seed(1)
+ 
+img_dir<- "../data/pets/train/"
+tm_feature<- c()
+if(run.feature)
+{
+  tm_feature <- system.time(rgb_feature <- feature(img_dir, export=TRUE))
+}
+cat("Time for constructing features is ", tm_feature[3], "s \n")
+#Timing visual features, I tend to get somewhere around 5 minutes 
+
+rgb_feature<- rgb_feature[ ,-1]
+label_train<- read.table("../data/pets/train_label.txt")
+names(label_train)<- "y"
+
+rgb_feature$y<- label_train
+ 
+training <- array(sample_frac(rgb_feature, 0.8, replace=FALSE))
+#testing <- setdiff(rgb_feature, training, 'rows') <- getting some sort of error in this line, unsure why it's not working, but I think it has something to do with the class of object created by sample_frac
+ 
+write.csv(training, file="../output/rgb_new_training.csv")
+#write.csv(testing, file="../output/rgb_new_testing.csv")
+```
+
+## Step 3: Models Training and Parameters Selection
+Training Gradient Boosting Model (baseline) and XGboost model on original SIFT features by cross validation.
+```{r}
+source("../lib/train.R")
+source("../lib/test.R")
+source("../lib/cross_validation.R")
+```
+
+Parameter training through SIFT features
+```{r}
+train_SIFT<- readRDS("../output/feature_train.RData")
+X_trainSIFT<- train_SIFT[, -5001]
+y_trainSIFT<- train_SIFT$y
+```
+
+
+
+
+
+

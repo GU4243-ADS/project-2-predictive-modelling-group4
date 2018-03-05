@@ -25,14 +25,14 @@ library("EBImage")
 library("gbm")
 library("tidyverse")
 ```
-##set the working derectory
+##set the working directory
 ```{r}
-#setwd("/Users/xiangyu/Documents/GitHub/project-2-predictive-modelling-group4/doc") 
+# setwd("/Users/pinkysilva/Documents/GitHub/project-2-predictive-modelling-group4/doc") 
 # Replace the above with your own path or manually set it in RStudio to where the main.rmd file is located. 
 ```
 ##set the directory for the training set and test set
 ```{r}
-img_train_dir  <- "../data/pets/train/"  ##This is where I put the traing data
+img_train_dir  <- "../data/pets/train/"  ##This is where I put the training data
 
 img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ```
@@ -54,7 +54,7 @@ dat <- matrix(NA, nrow = n_files, ncol = 3)
 imgs <- vector("list", n_files)
 
 for(i in 1:n_files){
-  img <- readImage(paste0(img_train_dir,  "pet", i, ".jpg"))
+  img <- readImage(paste0(img_train_dir, "pet", i, ".jpg"))
   imgs[[i]] <- img
   dat[i, 1:length(dim(img))] <- dim(img)
 }
@@ -72,9 +72,7 @@ table(dat[, 1])
 ```{r}
 img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
 dim(img_resized[[1]])
-img_resized
-dim(img_resized)
-length(rowMeans(img_resized[224,,]))
+length(img_resized)
 ```
 ##construct visual features
 ```{r}
@@ -99,7 +97,7 @@ feature1 <- function(img_list, data_name, export=T){
 #  dat <- data.frame(matrix(nrow = 2000, ncol = 1280))
   dat <-data.frame()
   
-  for(i in 1:nrow(img_list)){
+  for(i in 1:length(img_list)){
 #    img     <- readImage(paste0(img_dir, data_name, i, ".jpg"))
     mean    <- rowMeans(img_list[i,,])
   
