@@ -41,8 +41,12 @@ img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ##read the labels of traing data
 ```{r}
 labels = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names = c('label'))
+#we are making 6 times as many features from the images by transforming them
+expanded_labels <- list()
+for (i in 1:nrow(labels))
+  for(j in 1:6)
+    expanded_labels <- rbind(expanded_labels, labels[i,])
 
-head(labels,10)
 ```
 
 ```{r}
