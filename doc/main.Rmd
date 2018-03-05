@@ -61,18 +61,11 @@ In this step, we have a set of controls for the model evaluation.  The code in t
 + (TRUE/FALSE) process features for test set
 
 ```{r exp_setup}
-run.cv            <- TRUE # run cross-validation on the training set
+run.cv            <- FALSE # run cross-validation on the training set
 K                 <- 5    # number of CV folds
 run.feature.train <- TRUE # process features for training set
 run.test          <- TRUE # run evaluation on an independent test set
 run.feature.test  <- TRUE # process features for test set
-```
-
-Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
-
-```{r model_setup}
-model_values <- seq(3, 11, 2)
-model_labels <- paste("GBM with depth =", model_values)
 ```
 
 ### Step 2: Import training images class labels.
@@ -108,7 +101,8 @@ for(i in 1:n_files){
   dat[i, 1:length(dim(img))] <- dim(img)
 }
 ```
-##resize the image and define the feature function
+
+##resize the image, convert to grayscale, and define the feature function
 ```{r}
 img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
 img_resized = pblapply(img_resized, function(img){channel(img, "gray")})
