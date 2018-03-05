@@ -113,6 +113,7 @@ feature1 <- function(img_list, data_name, export=T){
     mean_flipflop <- rowMeans(img_rotate)
     dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
+  
   colnames(dat) <- c(1:181)
 
   ### output constructed features
@@ -143,11 +144,40 @@ dat_test <- dat_train[10000:12000,]
 dat_train <- dat_train[-c(10000:12000),]
 
 dat_train
+
+dat_train[,182] <- ifelse(dat_train[,182] == 'dog', 1, 0)
 tm_feature_test <- NA
+write.csv(dat_train, 'dat_train.csv')
 #if(run.feature.test){
 #  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
 #                                                     data_name = "pets", export = TRUE))
 #}
 
+```
+
+```{r}
+library(glmnet)
+x <- read.csv('feature_list.csv', header = FALSE)
+x<-x[,2:2001]
+x<-x[2:784,]
+
+x<-data.matrix(x)
+x1<-head(x)
+x1
+x <- x[,-1]
+dim(x)
+head(x)
+y <- t(x)
+label_factor <- ifelse(label == 'dog', 1, 0)
+label_factor
+
+y
+x<-data.matrix(x)
+a<-x[,1:181]
+b<-x[,182]
+logreg<-glmnet(y,label_factor, family='binomial')
+prediction=predict(logreg,y,type='class', s= logreg$lambda[length(logreg$lambda)])
+mean(prediction==label_factor)
+length(which(prediction==0))
 ```
 
