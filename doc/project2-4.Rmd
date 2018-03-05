@@ -113,7 +113,7 @@ feature1 <- function(img_list, data_name, export=T){
     dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
   ### output constructed features
-
+  
   return(dat)
 }
 ```
@@ -131,7 +131,10 @@ if(run.feature.train){
 }
 
 tm_feature_train
-dat_train
+#add labels as the final column in the 
+dat_train <- cbind(dat_train, expanded_labels)
+
+
 tm_feature_test <- NA
 #if(run.feature.test){
 #  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
