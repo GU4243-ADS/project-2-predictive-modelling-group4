@@ -20,7 +20,9 @@ if(!require("gbm")){
 if(!require("pbapply")){
   install.packages("pbapply")
 }
-
+if(!require("rlang")){
+  install.packages("rlang")
+}
 library("EBImage")
 library("gbm")
 library("tidyverse")
@@ -39,8 +41,12 @@ img_test_dir   <- "../data/pets/test/"  ##This is where I put the test data
 ##read the labels of traing data
 ```{r}
 labels = read_csv(paste(img_train_dir, '../train_label.txt', sep=''), col_names = c('label'))
+#we are making 6 times as many features from the images by transforming them
+expanded_labels <- list()
+for (i in 1:nrow(labels))
+  for(j in 1:6)
+    expanded_labels <- rbind(expanded_labels, labels[i,])
 
-head(labels,10)
 ```
 
 ```{r}
@@ -81,52 +87,33 @@ feature1 <- function(img_list, data_name, export=T){
   ### Construct process features for training/testing images
   ### Sample simple feature: Extract row average raw pixel values as features
   
-  ### Input: a directory that contains images ready for processing
+  ### Input: List of scaled images
   ### Output: an .RData file contains processed features for the images
   
   ### load libraries
   library("EBImage")
   
-  
-  ### determine img dimensions
-#  img0 <-  readImage(paste0(img_dir, data_name, 1, ".jpg"))
-#  mat1 <- as.matrix(img0)
-#  n_r  <- nrow(img0)
-  
-  ### store vectorized pixel values of images
-#  dat <- data.frame(matrix(nrow = 2000, ncol = 1280))
   dat <-data.frame()
   
   for(i in 1:length(img_list)){
 #    img     <- readImage(paste0(img_dir, data_name, i, ".jpg"))
-    mean    <- rowMeans(img_list[i,,])
+    mean    <- rowMeans(img_list[[i]])
   
     
-    img_rotate <- translate(rotate(img_list[i,,], 45), c(50, 0)) #rotate 45 degrees clockwise
+    img_rotate <- translate(rotate(img_list[[i]], 45), c(50, 0)) #rotate 45 degrees clockwise
     mean_rotate1 <- rowMeans(img_rotate)
-    img_rotate <- translate(rotate(img_list[i,,],-45), c(50, 0)) #rotate 45 degrees ccw
+    img_rotate <- translate(rotate(img_list[[i]],-45), c(50, 0)) #rotate 45 degrees ccw
     mean_rotate2 <- rowMeans(img_rotate)
-    img_flip   <- flip(img_list[i,,])
+    img_flip   <- flip(img_list[[i]])
     mean_flip <- rowMeans(img_rotate)
-    img_flop    <- flop(img_list[i,,])
+    img_flop    <- flop(img_list[[i]])
     mean_flop <- rowMeans(img_rotate)
-    img_flipflop <- flop(flip(img_list[i,,]))
+    img_flipflop <- flop(flip(img_list[[i]]))
     mean_flipflop <- rowMeans(img_rotate)
     dat = rbind(dat, mean, mean_rotate1, mean_rotate2, mean_flip, mean_flop, mean_flipflop)
   }
-  # spatial transformations
-  ##  img_rotate <- translate(rotate(img, 45), c(50, 0)) #rotate 45 degrees clockwise
-  ##  img_rotate <- translate(rotate(img,-45), c(50, 0)) #rotate 45 degrees ccw
-  ##  img_flip   <- flip(img)
-  ##  img_flop    <- flop(img)
-  ##  img_flipflop <- flop(flip(img))
-
-  
-  
-  
-  
   ### output constructed features
-
+  
   return(dat)
 }
 ```
@@ -144,7 +131,10 @@ if(run.feature.train){
 }
 
 tm_feature_train
-dat_train
+#add labels as the final column in the 
+dat_train <- cbind(dat_train, expanded_labels)
+
+
 tm_feature_test <- NA
 #if(run.feature.test){
 #  tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
