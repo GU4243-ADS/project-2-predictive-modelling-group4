@@ -65,6 +65,7 @@ for(i in 1:n_files){
   dat[i, 1:length(dim(img))] <- dim(img)
 }
 head(dat)
+head(imgs)
 ```
 
 ## get the general information of the images
@@ -77,7 +78,7 @@ table(dat[, 1])
 ##resize the image
 ```{r}
 img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
-img_resized = pblapply(img_resized, function(img){channel(img, "gray")})
+
 dim(img_resized[[1]])
 length(img_resized)
 ```
@@ -158,6 +159,7 @@ write.csv(dat_train, 'dat_train.csv')
 ```{r}
 library(glmnet)
 x <- read.csv('feature_list.csv', header = FALSE)
+
 x<-x[,2:2001]
 x<-x[2:784,]
 
@@ -175,9 +177,36 @@ y
 x<-data.matrix(x)
 a<-x[,1:181]
 b<-x[,182]
-logreg<-glmnet(y,label_factor, family='binomial')
-prediction=predict(logreg,y,type='class', s= logreg$lambda[length(logreg$lambda)])
+logreg<-glmnet(dat,label_factor, family='binomial')
+prediction=predict(logreg,dat,type='class', s= logreg$lambda[length(logreg$lambda)])
 mean(prediction==label_factor)
 length(which(prediction==0))
+```
+
+
+
+```{r}
+imgs <- vector("list", n_files)
+for(i in 1:n_files){
+  img <- readImage(paste0(img_train_dir, "pet", i, ".jpg"))
+  img <- resize(img, 28, 28)
+  img <- drop(img)
+  imgs <- rbind(imgs, as.vector(img))
+}
+head(imgs)
+
+
+
+
+```
+
+# Logistic Regression Prediction on test data
+
+```{r}
+n_test_files <- length(list.files(img_test_dir))
+
+
+prediction=predict(logreg,dat_test,type='class', s= logreg$lambda[length(logreg$lambda)])
+mean(prediction==label_factor)
 ```
 
