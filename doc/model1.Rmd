@@ -1,0 +1,189 @@
+---
+title: "model"
+author: "Shan Zhong"
+date: "2018å¹?3æœ?1æ—?"
+output: html_document
+---
+
+## STEP0: Prepare and load the library
+```{r prepare}
+if(!require("EBImage")){
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("EBImage")
+}
+
+if(!require("gbm")){
+  install.packages("gbm")
+}
+
+if(!require("pbapply")){
+  install.packages("pbapply")
+}
+
+if(!require("drat")){
+  install.packages("drat", repos="https://cran.rstudio.com")
+  drat:::addRepo("dmlc")
+}
+
+if(!require("mxnet")){
+  cran <- getOption("repos")
+  cran["dmlc"] <- "https://s3-us-west-2.amazonaws.com/apache-mxnet/R/CRAN/"
+  options(repos = cran)
+  install.packages("mxnet",dependencies = T)
+}
+
+library("EBImage");library("gbm");library("tidyverse")
+
+img_train_dir  <- "../data/pets/train/"  ## the traing data
+
+img_test_dir   <- "../data/pets/test/"  ## the test data
+
+#load("~/GitHub/project-2-predictive-modelling-group4/output/feature_pet.RData")
+
+label = read.table("../data/pets/train_label.txt", sep="\t")
+
+```
+
+# tried 28*28 pixel
+```{r feature information}
+
+width <- 28
+height <- 28
+
+img_size <- width*height
+
+n_files<- 2000
+
+for(i in 1:n_files){
+    imgname     <- paste0("pet", i, ".jpg")
+    images_names[i] <- imgname 
+  }
+
+
+```
+
+
+# here we extract the images into a long vector
+```{r extract data}
+
+feature_list <- pblapply(images_names, function(imgname) {
+    ## Read image
+    img <- readImage(paste0(img_train_dir, imgname))
+    ## Resize image
+    img_resized <- resize(img, w = width, h = height)
+    ## Set to grayscale
+    grayimg <- channel(img_resized, "gray")
+    ## Get the image as a matrix
+    img_matrix <- grayimg@.Data
+    ## Coerce to a vector
+    img_vector <- as.vector(t(img_matrix))
+    return(img_vector)
+  })
+
+## bind the list of vector into matrix
+feature_matrix <- do.call(rbind, feature_list)
+feature_matrix <- as.data.frame(feature_matrix)
+## Set names
+names(feature_matrix) <- paste0("pixel ", c(1:img_size))
+
+# you can save it if you want
+#save(feature_matrix, file = paste0("../output/feature_", feature_matrix, ".RData"))
+
+```
+
+
+# check cat and dogs , and set dogs for 1, cats for 0, set 90% training set, 10% test set
+# Data partitions: randomly split 90% of data into training set with equal weights for cats and dogs, and the rest 10% will be used as the test set.
+
+```{r test}
+library(caret)
+
+cats_data <-feature_matrix[label=="cat",]
+dim(cats_data)
+
+dogs_data <-feature_matrix[label=="dog",]
+dim(dogs_data)
+
+complete_set <- cbind(label = as.numeric(label=="dog"), feature_matrix)
+
+## test/training partitions
+training_index <- createDataPartition(complete_set$label, p = .9, times = 1)
+training_index <- unlist(training_index)
+train_set <- complete_set[training_index,]
+dim(train_set)
+
+test_set <- complete_set[-training_index,]
+dim(test_set)
+
+```
+
+
+
+# Reshape the data into a proper format required by the model:
+```{r reshape}
+## Fix train and test datasets
+train_data <- data.matrix(train_set)
+train_x <- t(train_data[, -1])
+train_y <- train_data[,1] # dog or cats
+train_array <- train_x
+dim(train_array) <- c(width, height, 1, ncol(train_x))
+
+test_data <- data.matrix(test_set)
+test_x <- t(test_set[,-1])
+test_y <- test_set[,1]
+test_array <- test_x
+dim(test_array) <- c(width, height, 1, ncol(test_x))
+```
+
+
+# here use deep learning to do image classification
+```{r model}
+library("mxnet")
+## Model
+mx_data <- mx.symbol.Variable('data')
+## 1st convolutional layer 5x5 kernel and 20 filters.
+conv_1 <- mx.symbol.Convolution(data = mx_data, kernel = c(5, 5), num_filter = 20)
+tanh_1 <- mx.symbol.Activation(data = conv_1, act_type = "tanh")
+pool_1 <- mx.symbol.Pooling(data = tanh_1, pool_type = "max", kernel = c(2, 2), stride = c(2,2 ))
+## 2nd convolutional layer 5x5 kernel and 50 filters.
+conv_2 <- mx.symbol.Convolution(data = pool_1, kernel = c(5,5), num_filter = 50)
+tanh_2 <- mx.symbol.Activation(data = conv_2, act_type = "tanh")
+pool_2 <- mx.symbol.Pooling(data = tanh_2, pool_type = "max", kernel = c(2, 2), stride = c(2, 2))
+## 1st fully connected layer
+flat <- mx.symbol.Flatten(data = pool_2)
+fcl_1 <- mx.symbol.FullyConnected(data = flat, num_hidden = 500)
+tanh_3 <- mx.symbol.Activation(data = fcl_1, act_type = "tanh")
+## 2nd fully connected layer
+fcl_2 <- mx.symbol.FullyConnected(data = tanh_3, num_hidden = 2)
+## Output
+NN_model <- mx.symbol.SoftmaxOutput(data = fcl_2)
+
+
+## Device used
+device <- mx.cpu()
+
+## Train on 1200 samples
+model <- mx.model.FeedForward.create(NN_model, X = train_array, y = train_y,
+                                     ctx = device,
+                                     num.round = 30,
+                                     array.batch.size = 100,
+                                     learning.rate = 0.05,
+                                     momentum = 0.9,
+                                     wd = 0.00001,
+                                     eval.metric = mx.metric.accuracy,
+                                     epoch.end.callback = mx.callback.log.train.metric(100))
+
+```
+
+# let's see how it works for the test set 
+```{r model}
+
+## Test test set
+predict_probs <- predict(model, test_array)
+predicted_labels <- max.col(t(predict_probs)) - 1
+table(test_data[, 1], predicted_labels)
+
+# accuracy
+sum(diag(table(test_data[, 1], predicted_labels)))/length(test_y)
+
+```
