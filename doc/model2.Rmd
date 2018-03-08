@@ -1,0 +1,125 @@
+---
+title: "model2"
+author: "team 2"
+date: "2018年3月6日"
+output: html_document
+---
+
+
+## STEP0: Prepare and load the library
+```{r prepare}
+if(!require("EBImage")){
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("EBImage")
+}
+
+if(!require("gbm")){
+  install.packages("gbm")
+}
+
+if(!require("pbapply")){
+  install.packages("pbapply")
+}
+
+if(!require("drat")){
+  install.packages("drat", repos="https://cran.rstudio.com")
+  drat:::addRepo("dmlc")
+}
+
+if(!require("mxnet")){
+  cran <- getOption("repos")
+  cran["dmlc"] <- "https://s3-us-west-2.amazonaws.com/apache-mxnet/R/CRAN/"
+  options(repos = cran)
+  install.packages("mxnet",dependencies = T)
+}
+
+library("EBImage");library("gbm");library("tidyverse")
+
+img_train_dir  <- "../data/pets/train/"  ## the traing data
+
+img_test_dir   <- "../data/pets/test/"  ## the test data
+
+#load("~/GitHub/project-2-predictive-modelling-group4/output/feature_pet.RData")
+
+label = read.table("../data/pets/train_label.txt", sep="\t")
+
+```
+
+# tried 28*28 pixel
+```{r feature information}
+
+width <- 28
+height <- 28
+
+img_size <- width*height
+
+n_files<- length(list.files(img_train_dir))
+
+label <- as.numeric(label=="dog")
+
+feature_matrix <- matrix(NA, n_files, img_size) 
+
+```
+
+
+# here we extract the images into a long vector
+```{r extract data}
+for(i in 1:n_files){
+    imgname     <- paste0("pet", i, ".jpg")
+    img <- readImage(paste0(img_train_dir, imgname ))
+    ## Resize image
+    img_resized <- resize(img, w = width, h = height)
+    ## Set to grayscale
+    grayimg <- channel(img_resized, "gray")
+    ## Get the image as a matrix
+    img_matrix <- grayimg@.Data
+    ## Coerce to a vector
+    img_vector <- as.vector(t(img_matrix))
+    ## put it into the matrix
+    feature_matrix[i,]<-img_vector
+}
+
+feature_matrix <- cbind(label,feature_matrix)
+
+rm(img_vector,img_matrix, grayimg,img_resized,img,imgname)
+
+
+```
+
+# Reshape the data for logistic model:
+```{r load model}
+source("../lib/train.R")
+source("../lib/test.R")
+
+train_data <- feature_matrix[1:1800,]
+train_x <- train_data[,-1] # dog or cats
+train_y <- train_data[,1] # dog or cats
+
+test_data <- feature_matrix[1801:2000,]
+test_x <- test_data[,-1]
+test_y <- test_data[,1]
+
+```
+
+# run the model with cross validation
+
+```{r run model}
+
+fit_train <- train(train_x , train_y)
+
+```
+
+
+# let's see how it works for the test set 
+```{r predict}
+
+fitted_y <- test(fit_train , test_x)
+
+# type 1, type 2 error
+table(test_y,fitted_y)
+
+# accuracy
+sum(diag(table(test_y, fitted_y)))/length(test_y)
+
+```
+
