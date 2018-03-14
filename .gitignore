@@ -2,3 +2,9 @@
 *.jpg
 data/pets/train-20180221T141501Z-001.zip
 data/pets/train-20180226T201757Z-001.zip
+doc/feature_list.csv
+data/pets/test_pets/test-features.zip
+data/pets/test_pets/test.zip
+data/pets/test_pets-20180306T110144Z-001.zip
+data/pets/test_pets/.DS_Store
+doc/group4_predictions.csv
