@@ -27,5 +27,23 @@ proj/
 ├── figs/
 └── output/
 ```
++ Richard Shin
+  - Carried out the feature extraction
+  - Bulit the logistic regression model
+  - Prepared and gave presentation
++ Xiangyu Liu
+  - Carried out the feature extration
+  - carried out the data preparation and resized the images
+  - Contributed to the presentation slides
+  - Created README.md
++ Cindy Xu
+  - Contributed to the logistic regression model
+  - Gave presentation
++ Shan Zhong
+  - Contributed to the deep learning algorithm
+  - Improved the feature extraction 
++ Minzi Keem
+  - Contributed to the presentation slides
+  -
 
 Please see each subfolder for a README file.
