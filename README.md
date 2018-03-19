@@ -33,9 +33,9 @@ proj/
   - Prepared and gave presentation
 + Xiangyu Liu
   - Carried out the feature extration
-  - carried out the data preparation and resized the images
-  - Contributed to the presentation slides
-  - Created README.md
+  - Carried out the data preparation part and resized the images
+  - Carried out the deep learning algorithm 
+  - Created README.md and contributed to the presentation slides
 + Cindy Xu
   - Contributed to the logistic regression model
   - Gave presentation
@@ -43,7 +43,7 @@ proj/
   - Contributed to the deep learning algorithm
   - Improved the feature extraction 
 + Minzi Keem
-  - Contributed to the presentation slides
-  -
+  - Cleaned up a lot of the code and made sure the starter codes fit with our new data
+  - Tried working with the RGB and added that to the feature.R
 
 Please see each subfolder for a README file.
